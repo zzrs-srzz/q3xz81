@@ -235,18 +235,15 @@ body.locked > *:not(#gate){display:none !important}
 </div>
 <script>
 (function(){
-  var KEY = 'nav-unlock-v1';
   var DJB = '1537961226';
   var LEN = 12;
   function djb2(s){ var h = 5381; for (var i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return String(h); }
   function unlock(){
-    try { localStorage.setItem(KEY, '1'); } catch (e) {}
     document.body.classList.remove('locked');
     var g = document.getElementById('gate');
     if (g && g.parentNode) g.parentNode.removeChild(g);
     document.title = 'Dashboard';
   }
-  try { if (localStorage.getItem(KEY) === '1') { unlock(); return; } } catch (e) {}
   var buf = '';
   document.addEventListener('keydown', function(e){
     if (e.ctrlKey || e.metaKey || e.altKey) return;
