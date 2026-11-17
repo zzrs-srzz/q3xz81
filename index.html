@@ -573,23 +573,30 @@ function saveFav(){ try { localStorage.setItem(FAV_KEY, JSON.stringify(FAV)); } 
     const FULL = window.__SEED_FULL || null;
     const SEED = FULL ? (FULL.fav || []) : (Array.isArray(window.__SEED_FAV) ? window.__SEED_FAV : []);
     if (!SEED.length && !(FULL && ((FULL.my && FULL.my.length) || (FULL.del && FULL.del.length)))) return;
-    /* 种子在本地和线上都生效：上传后第一次打开网页也能看到这批收藏 */
-    if (localStorage.getItem('nav-seed-v3')) return;
-    /* 已经有收藏的老配置：绝不灌种子，避免把用户删掉的站又加回来 */
-    if (FAV.length >= 10) { localStorage.setItem('nav-seed-v3', String(Date.now())); return; }
+    /* 种子在本地和线上都生效；v4 起：对老配置也做并集补齐（缺的补上、已有的不动） */
+    if (localStorage.getItem('nav-seed-v4')) return;
     const have = new Set(FAV.map(f => String(f.id)));
     SEED.forEach(function(f){
       if (!f || !f.id) return;
       if (have.has(String(f.id))) return;
       FAV.push({ id: String(f.id), t: f.t || '', u: f.u || '', d: f.d || '', i: f.i || '', host: f.host || '', ts: f.ts || Date.now(), cat: f.cat || '' });
+      have.add(String(f.id));
     });
     if (FULL) {
-      if (Array.isArray(FULL.my) && FULL.my.length && !MY.length) { Array.prototype.push.apply(MY, FULL.my); writeJSON(MY_KEY, MY); }
-      if (Array.isArray(FULL.del) && FULL.del.length && !DEL.length) { Array.prototype.push.apply(DEL, FULL.del); writeJSON(DEL_KEY, DEL); }
+      if (Array.isArray(FULL.my) && FULL.my.length) {
+        const myIds = new Set(MY.map(function(m){ return String(m.id); }));
+        FULL.my.forEach(function(m){ if (m && m.id && !myIds.has(String(m.id))) { MY.push(m); myIds.add(String(m.id)); } });
+        writeJSON(MY_KEY, MY);
+      }
+      if (Array.isArray(FULL.del) && FULL.del.length) {
+        const delKeys = new Set(DEL.map(function(d){ return String(d.id) + '|' + (d.host || ''); }));
+        FULL.del.forEach(function(d){ if (d && !delKeys.has(String(d.id) + '|' + (d.host || ''))) { DEL.push(d); delKeys.add(String(d.id) + '|' + (d.host || '')); } });
+        writeJSON(DEL_KEY, DEL);
+      }
       if (typeof applyUserData === 'function') applyUserData();
     }
     saveFav();
-    localStorage.setItem('nav-seed-v3', String(Date.now()));
+    localStorage.setItem('nav-seed-v4', String(Date.now()));
   } catch (e) {}
 })();
 function favIdx(id){ return FAV.findIndex(f => String(f.id) === String(id)); }
