@@ -293,9 +293,9 @@ body.locked > *:not(#gate){display:none !important}
   .card.tilt{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-3px) scale(1.045);transition:none}
 }
 </style>
-<style>.spdtxt{display:none!important}</style>
+<style>.spdtxt{display:none!important}#addBtn,#bakBtn{display:none!important}</style>
 </head>
-<body class="locked"><script>window.__BRAND_TITLE__="极光导航";</script>
+<body class="locked"><script>window.__BRAND_TITLE__="极光导航";window.__UPLOAD__=1;</script>
 <div class="aurora" aria-hidden="true"></div>
 <canvas id="auroraCv" aria-hidden="true"></canvas>
 <canvas id="trail" aria-hidden="true"></canvas>
@@ -431,6 +431,7 @@ function mySiteList(){
 }
 function deleteSite(s){
   // 彻底删除：从数据里移走，并记进黑名单，重开也不再出现
+  if (window.__UPLOAD__) { toast('上传版不能删除站点'); return; }
   const id = String(s.id);
   DATA.sites = DATA.sites.filter(x => String(x.id) !== id);
   siteById.delete(s.id);
@@ -441,6 +442,7 @@ function deleteSite(s){
   queueFileSave();
 }
 function addMySite(url, name, note){
+  if (window.__UPLOAD__) { toast('上传版不能添加网址'); return null; }
   let u = String(url || '').trim();
   if (!u) return null;
   if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
@@ -1044,7 +1046,7 @@ function renderFav(keepScroll){
   const title = sub ? (sub === 'none' ? '未分类' : favCatName(sub)) : '★ 我的收藏';
   const mini = sorting
     ? (SPEED.on ? '已按当前速度排序 · <a data-act="retest">重新测速</a>' : '按收藏顺序显示（测速已关）')
-    : (sub ? '按收藏顺序显示' : '右键任意站点 → 「设置分类」可分到七类；收藏顺序永久不变');
+    : (sub ? '按收藏顺序显示' : (window.__UPLOAD__ ? '' : '右键任意站点 → 「设置分类」可分到七类；收藏顺序永久不变'));
 
   let html = '<div class="favchips">'
     + favChip('', '全部收藏', FAV.length)
@@ -1056,9 +1058,11 @@ function renderFav(keepScroll){
     + '<span class="mini">' + mini + '</span></div>';
   html += list.length
     ? '<div class="grid">' + list.map(s => card(s, true)).join('') + '</div>'
-    : '<div class="empty">' + (sub
+    : '<div class="empty">' + (window.__UPLOAD__
+        ? (sub ? '这个分类里还没有站点。' : '还没有收藏。')
+        : (sub
         ? '这个分类里还没有站点。在任意收藏上点右键 → 「设置分类」就能归进来。'
-        : '还没有收藏。在任意站点上点右键 → 「收藏此站」。') + '</div>';
+        : '还没有收藏。在任意站点上点右键 → 「收藏此站」。')) + '</div>';
   document.getElementById('content').innerHTML = html;
   if (y != null) window.scrollTo(0, y);
   document.getElementById('stat').textContent = '收藏 ' + FAV.length + ' 个'
@@ -1210,17 +1214,18 @@ function showCtx(x, y, id){
   ctx.innerHTML = '<div data-c="fav">' + (fav ? '★ 取消收藏' : '☆ 收藏此站') + '</div>'
     + (fav ? '<div data-c="cat">🗂 设置分类…（当前：' + (favCatOf(s) ? favCatName(favCatOf(s)) : '未分类') + '）</div>' : '')
     + '<div data-c="copy">复制链接</div>'
-    + (s.my ? '<div data-c="edit">编辑名称/备注</div>' : '')
+    + (!window.__UPLOAD__ && s.my ? '<div data-c="edit">编辑名称/备注</div>' : '')
     + '<div class="sep"></div>'
     + '<div data-c="open">在新标签打开</div>'
-    + '<div class="sep"></div>'
-    + '<div data-c="del" style="color:#ef4444">删除此站（彻底）</div>';
+    + (!window.__UPLOAD__ ? '<div class="sep"></div>'
+    + '<div data-c="del" style="color:#ef4444">删除此站（彻底）</div>' : '');
   ctx.style.display = 'block';
   const w = ctx.offsetWidth, h = ctx.offsetHeight;
   ctx.style.left = Math.min(x, window.innerWidth - w - 8) + 'px';
   ctx.style.top = Math.min(y, window.innerHeight - h - 8) + 'px';
 }
 document.addEventListener('contextmenu', e => {
+  if (window.__UPLOAD__) { e.preventDefault(); return; }
   const el = e.target.closest('.card, .mvrow');
   if (!el || !el.dataset.id) return;
   e.preventDefault();
