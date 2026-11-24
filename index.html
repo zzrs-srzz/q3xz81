@@ -1781,7 +1781,7 @@ document.getElementById('foot').innerHTML =
     d.appendChild(box);
     d.addEventListener('click', function(e){ if (e.target === d) d.remove(); });
     document.body.appendChild(d);
-    return d;
+    return { root: d, box: box };
   }
   function toast(msg){
     var t = document.createElement('div');
@@ -1802,6 +1802,7 @@ document.getElementById('foot').innerHTML =
   }
   btn.addEventListener('click', function(){
     btn.textContent = 'TV…'; btn.disabled = true;
+    toast('正在抓取今日测速极速源，约需 10~30 秒…');
     getCfg().then(function(res){
       var j = res.j, src = res.src;
       var info = j._info || {};
@@ -1812,13 +1813,14 @@ document.getElementById('foot').innerHTML =
         + '极速源 ' + (info.sources ? info.sources.length : (info.source_count || '?')) + ' 个 · 合并站点 <b>' + (j.sites ? j.sites.length : '?') + '</b> 个</div>'
         + '<div style="background:#f4f6f8;border-radius:8px;padding:9px 12px;word-break:break-all;font-family:monospace;font-size:12px">' + url + '</div>'
         + '<div style="opacity:.65;margin-top:8px">misaTV / TVBox 影视仓 → 设置 → 配置地址，粘贴上面链接即可（链接永远返回当天测速最快的极速源）</div>';
-      var foot = document.createElement('div');
-      foot.style.cssText = 'margin-top:14px;display:flex;gap:10px;flex-wrap:wrap';
+      var m = modal(html + '<div class="tv-foot"></div>');
+      var footHost = m.box.querySelector('.tv-foot');
+      footHost.style.cssText = 'margin-top:14px;display:flex;gap:10px;flex-wrap:wrap';
       function mkBtn(label, fn){
         var b = document.createElement('button');
         b.textContent = label;
         b.style.cssText = 'padding:8px 14px;border-radius:8px;border:0;background:#3b82f6;color:#fff;cursor:pointer;font:13px system-ui';
-        b.onclick = fn; foot.appendChild(b); return b;
+        b.onclick = fn; footHost.appendChild(b); return b;
       }
       mkBtn('复制导入链接', function(){ navigator.clipboard.writeText(url).then(function(){ toast('已复制 ' + url); }, function(){
         var i = document.createElement('input'); i.value = url; document.body.appendChild(i); i.select();
@@ -1830,10 +1832,8 @@ document.getElementById('foot').innerHTML =
         a.download = 'tv-极速源-' + (info.build || '').replace(/[: ]/g,'-').slice(0,16) + '.json';
         a.click(); URL.revokeObjectURL(a.href);
       });
-      var close = mkBtn('关闭', function(){ d.remove(); });
+      var close = mkBtn('关闭', function(){ m.root.remove(); });
       close.style.background = '#9ca3af';
-      box.appendChild(foot);
-      modal(html);
     }).catch(function(e){
       modal('<h3>📺 TV 源获取失败</h3><div style="opacity:.7">' + (e.message || e) + '</div>');
     }).finally(function(){ btn.textContent = 'TV'; btn.disabled = false; });
