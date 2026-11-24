@@ -1776,7 +1776,7 @@ document.getElementById('foot').innerHTML =
     var d = document.createElement('div');
     d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center';
     var box = document.createElement('div');
-    box.style.cssText = 'background:#fff;color:#222;border-radius:14px;max-width:520px;width:92%;padding:22px 24px;font:14px/1.6 system-ui;box-shadow:0 18px 60px rgba(0,0,0,.35)';
+    box.style.cssText = 'background:#161c28;color:#e8eaf0;border:1px solid #2a3446;border-radius:14px;max-width:520px;width:92%;padding:22px 24px;font:14px/1.6 system-ui;box-shadow:0 18px 60px rgba(0,0,0,.55)';
     box.innerHTML = html;
     d.appendChild(box);
     d.addEventListener('click', function(e){ if (e.target === d) d.remove(); });
@@ -1811,7 +1811,7 @@ document.getElementById('foot').innerHTML =
         + '<div style="opacity:.75;margin-bottom:10px">'
         + (info.build ? '构建时间 ' + info.build + '<br>' : '')
         + '极速源 ' + (info.sources ? info.sources.length : (info.source_count || '?')) + ' 个 · 合并站点 <b>' + (j.sites ? j.sites.length : '?') + '</b> 个</div>'
-        + '<div style="background:#f4f6f8;border-radius:8px;padding:9px 12px;word-break:break-all;font-family:monospace;font-size:12px">' + url + '</div>'
+        + '<div style="background:#222b3c;border-radius:8px;padding:9px 12px;word-break:break-all;font-family:monospace;font-size:12px;color:#9ecbff">' + url + '</div>'
         + '<div style="opacity:.65;margin-top:8px">misaTV / TVBox 影视仓 → 设置 → 配置地址，粘贴上面链接即可（链接永远返回当天测速最快的极速源）</div>';
       var m = modal(html + '<div class="tv-foot"></div>');
       var footHost = m.box.querySelector('.tv-foot');
