@@ -567,53 +567,22 @@ function saveFav(){ try { localStorage.setItem(FAV_KEY, JSON.stringify(FAV)); } 
     const FULL = window.__SEED_FULL || null;
     const SEED = FULL ? (FULL.fav || []) : (Array.isArray(window.__SEED_FAV) ? window.__SEED_FAV : []);
     if (!SEED.length && !(FULL && ((FULL.my && FULL.my.length) || (FULL.del && FULL.del.length)))) return;
-    /* 种子在本地和线上都生效；v5 起：并集补齐之外，还按种子里的删除名单把对应收藏/自添加条目清掉
-       （解决老浏览器里已被删除的磁贴一直留着的问题），灌过一次就不再重复 */
-    if (localStorage.getItem('nav-seed-v7')) return;
-    const have = new Set(FAV.map(f => String(f.id)));
-    SEED.forEach(function(f){
-      if (!f || !f.id) return;
-      if (have.has(String(f.id))) return;
-      FAV.push({ id: String(f.id), t: f.t || '', u: f.u || '', d: f.d || '', i: f.i || '', host: f.host || '', ts: f.ts || Date.now(), cat: f.cat || '' });
-      have.add(String(f.id));
-    });
+    /* 种子在本机和线上都生效；v8 起：种子为「权威全量快照」（线上版导出的 222 收藏），
+       检测到新版本种子就把本地收藏/我的添加/删除记录整体替换，杜绝旧数据残留
+       （已删站点复活、未分类脏数据等问题）。灌过一次就不再重复（避免后续编辑被回滚） */
+    if (localStorage.getItem('nav-seed-v8')) return;
     if (FULL) {
-      if (Array.isArray(FULL.my) && FULL.my.length) {
-        const myIds = new Set(MY.map(function(m){ return String(m.id); }));
-        FULL.my.forEach(function(m){ if (m && m.id && !myIds.has(String(m.id))) { MY.push(m); myIds.add(String(m.id)); } });
-        writeJSON(MY_KEY, MY);
-      }
-      if (Array.isArray(FULL.del) && FULL.del.length) {
-        const delKeys = new Set(DEL.map(function(d){ return String(d.id) + '|' + (d.host || ''); }));
-        FULL.del.forEach(function(d){ if (d && !delKeys.has(String(d.id) + '|' + (d.host || ''))) { DEL.push(d); delKeys.add(String(d.id) + '|' + (d.host || '')); } });
-        writeJSON(DEL_KEY, DEL);
-        /* 按删除名单清理：id 相同、或「URL 相同且不在种子里」的条目移除。
-           URL 相同但种子里还有 → 是删掉后又重新收藏的，必须保留 */
-        function normU(u){
-          try { const x = new URL(u); return x.host.toLowerCase() + '/' + x.pathname.replace(/\/+$/, '') + (x.search || ''); }
-          catch (e2) { return String(u || '').toLowerCase(); }
-        }
-        const delIds = new Set(DEL.map(function(d){ return String(d.id); }));
-        const delUrls = new Set(DEL.map(function(d){ return normU(d.u || ''); }).filter(function(s){ return s; }));
-        const seedFavIds = new Set(SEED.map(function(f){ return String(f.id); }));
-        const seedFavUrls = new Set(SEED.map(function(f){ return normU(f.u || ''); }));
-        const seedMyIds = new Set((FULL.my || []).map(function(m){ return String(m.id); }));
-        const seedMyUrls = new Set((FULL.my || []).map(function(m){ return normU(m.u || ''); }));
-        const beforeF = FAV.length, beforeM = MY.length;
-        function dead(x){
-          const u = normU(x.u || '');
-          if (u && delUrls.has(u) && !seedFavUrls.has(u) && !seedMyUrls.has(u)) return true;
-          return delIds.has(String(x.id)) && !seedFavIds.has(String(x.id)) && !seedMyIds.has(String(x.id));
-        }
-        FAV = FAV.filter(function(x){ return !dead(x); });
-        MY = MY.filter(function(x){ return !dead(x); });
-        if (FAV.length !== beforeF) writeJSON(FAV_KEY, FAV);
-        if (MY.length !== beforeM) writeJSON(MY_KEY, MY);
-      }
+      FAV = SEED.map(function(f){
+        return { id: String(f.id), t: f.t || '', u: f.u || '', d: f.d || '', i: f.i || '', host: f.host || '', ts: f.ts || Date.now(), cat: f.cat || '' };
+      });
+      if (Array.isArray(FULL.my)) MY = FULL.my.slice();
+      if (Array.isArray(FULL.del)) DEL = FULL.del.slice();
+      writeJSON(MY_KEY, MY);
+      writeJSON(DEL_KEY, DEL);
       if (typeof applyUserData === 'function') applyUserData();
     }
     saveFav();
-    localStorage.setItem('nav-seed-v7', String(Date.now()));
+    localStorage.setItem('nav-seed-v8', String(Date.now()));
   } catch (e) {}
 })();
 function favIdx(id){ return FAV.findIndex(f => String(f.id) === String(id)); }
